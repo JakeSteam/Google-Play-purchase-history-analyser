@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  
+<head>
+    <title>Read Text File</title>
+</head>
+  
+<body>
+    <input type="file" name="inputfile" id="inputfile">
+   
+    <pre id="output"></pre>
+      
+    <script type="text/javascript">
+        document.getElementById('inputfile')
+            .addEventListener('change', function() {
+              
+            var fr=new FileReader();
+            fr.onload=function(){
+                document.getElementById('output')
+                        .textContent=fr.result;
+            }
+            fr.readAsText(this.files[0]);
+        })
+
+        var a = `
+        [{
+    "purchaseHistory": {
+      "invoicePrice": "£3.79",
+      "paymentMethodTitle": "Mastercard-0000",
+      "userLanguageCode": "en_GB",
+      "userCountry": "GB",
+      "doc": {
+        "documentType": "In App Item",
+        "title": "1000 Stars (Solitaire Cat Islands-TriPeaks)"
+      },
+      "purchaseTime": "2022-02-04T05:25:19.112Z"
+    }
+  },
+  {
+    "purchaseHistory": {
+      "invoicePrice": "£1.59",
+      "paymentMethodTitle": "Mastercard-0000",
+      "userLanguageCode": "en_GB",
+      "userCountry": "GB",
+      "doc": {
+        "documentType": "In App Item",
+        "title": "Skip Ticket x35 (Solitaire Cat Islands-TriPeaks)"
+      },
+      "purchaseTime": "2022-02-01T06:04:48.646Z"
+    }
+  },
+  {
+    "purchaseHistory": {
+      "invoicePrice": "£4.29",
+      "paymentMethodTitle": "Mastercard-0000",
+      "userLanguageCode": "en_GB",
+      "userCountry": "GB",
+      "doc": {
+        "documentType": "Purchase",
+        "title": "Ads Grinder (Wildlife Incremental Idle Game)"
+      },
+      "purchaseTime": "2021-12-06T01:25:26.030Z"
+    }
+  }]
+  `
+var purchases = JSON.parse(a);
+//console.log(purchases[0].purchaseHistory.invoicePrice);
+/*var purchasesByYear = {};
+var purchasesByType = {};
+var purchasesByCountry = {};
+var totalPurchases = 0.0;
+for (var purchase of purchases) {
+    var amount = Number(purchase.purchaseHistory.invoicePrice.replace(/[^0-9.-]+/g,""));
+    totalPurchases += amount;
+}
+console.log(totalPurchases)*/
+// totals
+
+var counts = purchases.reduce((totals, purchase) => {
+  var type = purchase.purchaseHistory.doc.documentType;
+  var amount = Number(purchase.purchaseHistory.invoicePrice.replace(/[^0-9.-]+/g,""));
+  updateTotals(totals, 'byType', type, amount);
+  return totals;
+}, {});
+
+function updateTotals(totals, fieldName, fieldValue, purchaseAmount) {
+    if (!totals.hasOwnProperty(fieldName)) {
+      totals[fieldName] = {}
+  }
+  if (!totals[fieldName].hasOwnProperty(fieldValue)) {
+      totals[fieldName][fieldValue] = {}
+    totals[fieldName][fieldValue]['count'] = 0;
+    totals[fieldName][fieldValue]['sum'] = 0
+  }
+  totals[fieldName][fieldValue]['count']++;
+  totals[fieldName][fieldValue]['sum'] += purchaseAmount
+}
+
+console.log(counts);
+    </script>
+</body>
+  
+</html>
