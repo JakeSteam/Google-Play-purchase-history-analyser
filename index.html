@@ -6,110 +6,26 @@
 </head>
 
 <body>
-    <input type="file" name="inputfile" id="inputfile">
+    <script src="sample.js"></script>
+    Pick a file, or <a onclick="handlePurchasesFile(sampleData)">load sample data</a>
+
+    <input type="file" name="inputfile" id="inputfile" accept=".json">
 
     <div id="output"></div>
 
     <script type="text/javascript">
-        document.getElementById('inputfile')
-            .addEventListener('change', function () {
-
+        document.getElementById('inputfile').addEventListener('change', function () {
                 var fr = new FileReader();
                 fr.onload = function () {
-                    document.getElementById('output')
-                        .textContent = fr.result;
+                    handlePurchasesFile(fr.result);
                 }
                 fr.readAsText(this.files[0]);
             })
 
-        var a = `
-        [{
-    "purchaseHistory": {
-      "invoicePrice": "£3.79",
-      "paymentMethodTitle": "Mastercard-0000",
-      "userLanguageCode": "en_GB",
-      "userCountry": "GB",
-      "doc": {
-        "documentType": "In App Item",
-        "title": "1000 Stars (Solitaire Cat Islands-TriPeaks)"
-      },
-      "purchaseTime": "2022-02-04T05:25:19.112Z"
-    }
-  },
-  {
-    "purchaseHistory": {
-      "invoicePrice": "£1.59",
-      "paymentMethodTitle": "Mastercard-0000",
-      "userLanguageCode": "en_GB",
-      "userCountry": "GB",
-      "doc": {
-        "documentType": "In App Item",
-        "title": "Skip Ticket x35 (Solitaire Cat Islands-TriPeaks)"
-      },
-      "purchaseTime": "2022-02-01T06:04:48.646Z"
-    }
-  },
-
-  {
-  "purchaseHistory": {
-    "invoicePrice": "£0.00",
-    "paymentMethodTitle": "",
-    "userLanguageCode": "en_GB",
-    "userCountry": "GB",
-    "doc": {
-      "documentType": "Android Apps",
-      "title": "com.rmg.fishclickers.pro"
-    },
-    "purchaseTime": "2019-11-10T12:00:33.811Z"
-  }
-},
-{
-  "purchaseHistory": {
-    "invoicePrice": "£0.00",
-    "paymentMethodTitle": "",
-    "userLanguageCode": "en_GB",
-    "userCountry": "GB",
-    "doc": {
-      "documentType": "Android Apps",
-      "title": "com.scv.idle.pro.miner.dig"
-    },
-    "purchaseTime": "2019-11-10T11:59:31.229Z"
-  }
-},
-{
-  "purchaseHistory": {
-    "invoicePrice": "£0.99",
-    "paymentMethodTitle": "Mastercard-1234",
-    "userLanguageCode": "en_GB",
-    "userCountry": "GB",
-    "doc": {
-      "documentType": "In App Item",
-      "title": "Starter Pack (Penguin Isle)"
-    },
-    "purchaseTime": "2019-11-02T10:22:00.286Z"
-  }
-},
-  
-  {
-    "purchaseHistory": {
-      "invoicePrice": "£4.29",
-      "paymentMethodTitle": "Mastercard-0000",
-      "userLanguageCode": "en_GB",
-      "userCountry": "GB",
-      "doc": {
-        "documentType": "Purchase",
-        "title": "Ads Grinder (Wildlife Incremental Idle Game)"
-      },
-      "purchaseTime": "2021-12-06T01:25:26.030Z"
-    }
-  }]
-  `
         function handlePurchasesFile(json) {
-            var purchases = JSON.parse(a);
-            var overallTotal = 0;
+            var purchases = JSON.parse(json);
             var summary = getPurchasesSummary(purchases);
             var output = document.getElementById('output');
-            output.innerHTML += '<h2>You\'ve spent ' + overallTotal + ' (of your currency) in total!</h2>'
             outputSummaries(output, summary);
         }
 
@@ -119,10 +35,16 @@
                 if (amount == 0) {
                     return totals;
                 }
-                overallTotal += amount;
+
+                updateTotals(totals, 'Overall total', "All purchases", amount);
 
                 var type = purchase.purchaseHistory.doc.documentType;
                 updateTotals(totals, 'Grouped by purchase type', type, amount);
+
+                var paymentType = purchase.purchaseHistory.paymentMethodTitle;
+                paymentType = paymentType.startsWith('Google Play balance') ? 'Google Play balance' : paymentType;
+                paymentType = paymentType == '' ? 'Unknown' : paymentType;
+                updateTotals(totals, 'Grouped by payment method', paymentType, amount);
 
                 var purchaseTime = new Date(purchase.purchaseHistory.purchaseTime);
                 var year = purchaseTime.getFullYear();
@@ -132,11 +54,9 @@
                 updateTotals(totals, 'Grouped by hour of day', hour, amount);
 
                 var appName = purchase.purchaseHistory.doc.title.match(/\(([^)]*)\)[^(]*$/);
-                var safeAppName = appName ? appName[1] : purchase.purchaseHistory.doc.title;
-                updateTotals(totals, 'Grouped by app', safeAppName, amount);
+                appName = appName ? appName[1] : purchase.purchaseHistory.doc.title;
+                updateTotals(totals, 'Grouped by app', appName, amount);
 
-                var paymentType = purchase.purchaseHistory.paymentMethodTitle;
-                updateTotals(totals, 'Grouped by payment method', paymentType, amount);
                 return totals;
             }, {});
         }
@@ -161,9 +81,9 @@
                 for (type in summary[grouping]) {
                     newHTML += '<tr><td><b>' + type + '</b></td>\n';
                     newHTML += '<td>' + summary[grouping][type]['count'] + '</td>\n';
-                    newHTML += '<td>' + summary[grouping][type]['sum'] + '</td></tr>\n';
+                    newHTML += '<td>' + summary[grouping][type]['sum'].toFixed(2) + '</td></tr>\n';
                 }
-                newHTML += '</table><br><br>\n';
+                newHTML += '</table><br>\n';
                 output.innerHTML += newHTML;
             }
         }
