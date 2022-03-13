@@ -104,39 +104,41 @@
     }
   }]
   `
-        var purchases = JSON.parse(a);
-        var summary = purchases.reduce((totals, purchase) => {
-            var amount = Number(purchase.purchaseHistory.invoicePrice.replace(/[^0-9.-]+/g, ""));
-            if (amount == 0) {
+        function handlePurchasesFile(json) {
+            var purchases = JSON.parse(a);
+            var overallTotal = 0;
+            var summary = getPurchasesSummary(purchases);
+            var output = document.getElementById('output');
+            output.innerHTML += '<h2>You\'ve spent ' + overallTotal + ' (of your currency) in total!</h2>'
+            outputSummaries(output, summary);
+        }
+
+        function getPurchasesSummary(purchases) {
+            return purchases.reduce((totals, purchase) => {
+                var amount = Number(purchase.purchaseHistory.invoicePrice.replace(/[^0-9.-]+/g, ""));
+                if (amount == 0) {
+                    return totals;
+                }
+                overallTotal += amount;
+
+                var type = purchase.purchaseHistory.doc.documentType;
+                updateTotals(totals, 'Grouped by purchase type', type, amount);
+
+                var purchaseTime = new Date(purchase.purchaseHistory.purchaseTime);
+                var year = purchaseTime.getFullYear();
+                updateTotals(totals, 'Grouped by year', year, amount);
+
+                var hour = purchaseTime.getHours();
+                updateTotals(totals, 'Grouped by hour of day', hour, amount);
+
+                var appName = purchase.purchaseHistory.doc.title.match(/\(([^)]*)\)[^(]*$/);
+                var safeAppName = appName ? appName[1] : purchase.purchaseHistory.doc.title;
+                updateTotals(totals, 'Grouped by app', safeAppName, amount);
+
+                var paymentType = purchase.purchaseHistory.paymentMethodTitle;
+                updateTotals(totals, 'Grouped by payment method', paymentType, amount);
                 return totals;
-            }
-
-            var type = purchase.purchaseHistory.doc.documentType;
-            updateTotals(totals, 'Grouped by purchase type', type, amount);
-
-            var year = new Date(purchase.purchaseHistory.purchaseTime).getFullYear();
-            updateTotals(totals, 'Grouped by year', year, amount);
-
-            var appName = purchase.purchaseHistory.doc.title.match(/\(([^)]*)\)[^(]*$/);
-            var safeAppName = appName ? appName[1] : purchase.purchaseHistory.doc.title;
-            updateTotals(totals, 'Grouped by app', safeAppName, amount);
-
-            var paymentType = purchase.purchaseHistory.paymentMethodTitle;
-            updateTotals(totals, 'Grouped by payment method', paymentType, amount);
-            return totals;
-        }, {});
-
-        var output = document.getElementById('output');
-        for (grouping in summary) {
-            var newHTML = '<h2>' + grouping + '</h2>\n';
-            newHTML += '<table><tr><th></th><th>Count</th><th>Total</th></tr>\n';
-            for (type in summary[grouping]) {
-                newHTML += '<tr><td><b>' + type + '</b></td>\n';
-                newHTML += '<td>' + summary[grouping][type]['count'] + '</td>\n';
-                newHTML += '<td>' + summary[grouping][type]['sum'] + '</td></tr>\n';
-            }
-            newHTML += '</table><br><br>\n';
-            output.innerHTML += newHTML;
+            }, {});
         }
 
         function updateTotals(totals, fieldName, fieldValue, purchaseAmount) {
@@ -151,8 +153,20 @@
             totals[fieldName][fieldValue]['count']++;
             totals[fieldName][fieldValue]['sum'] += purchaseAmount
         }
-        console.log(summary);
-        console.log(output.innerHTML);
+
+        function outputSummaries(output, summary) {
+            for (grouping in summary) {
+                var newHTML = '<h2>' + grouping + '</h2>\n';
+                newHTML += '<table><tr><th></th><th>Count</th><th>Total</th></tr>\n';
+                for (type in summary[grouping]) {
+                    newHTML += '<tr><td><b>' + type + '</b></td>\n';
+                    newHTML += '<td>' + summary[grouping][type]['count'] + '</td>\n';
+                    newHTML += '<td>' + summary[grouping][type]['sum'] + '</td></tr>\n';
+                }
+                newHTML += '</table><br><br>\n';
+                output.innerHTML += newHTML;
+            }
+        }
     </script>
 </body>
 
